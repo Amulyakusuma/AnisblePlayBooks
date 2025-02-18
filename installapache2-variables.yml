@@ -1,0 +1,24 @@
+- hosts: kubernetes
+  become: true
+  vars:
+    package_name: "apache2"
+    detail: "Amulya"
+  tasks:
+  - name: Install Apache
+    apt:
+      name: "{{package_name}}"
+      state: present
+  - name:  copy the index.html file
+    template:
+      src: index.html
+      dest: /var/www/html/index.html
+    notify:
+    - start the service
+  - name: debug msg
+    debug:
+      msg: "completed the tasks"
+  handlers:
+  - name: start the service
+    service:
+      name: "{{package_name}}"
+      state: started

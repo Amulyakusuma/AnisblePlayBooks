@@ -1,44 +1,59 @@
-- hosts: jenkinsServer
+- hosts: kubernetes
   become: yes
   tasks:
-  - name: Download Long Term Jenkins release
-    get_url:
-      url: https://pkg.jenkins.io/redhat-stable/jenkins.repo
-      dest: /etc/yum.repos.d/jenkins.repo
-  - name: Import jenkins key from url
-    rpm_key:
+  - name: add jenkins GPG key
+    shell:
+      curl -fsSL https://pkg.jenkins.io/debian-stable/jenkins.io-2023.key | tee /usr/share/keyrings/jenkins-keyring.asc > /dev/null
+    args:
+      creates: /usr/share/keyrings/jenkins-keyring.asc
+
+  - name: Add Jenkins repository to sources list
+    shell:
+      echo "deb [signed-by=/usr/share/keyrings/jenkins-keyring.asc] https://pkg.jenkins.io/debian-stable binary/" | tee /etc/apt/sources.list.d/jenkins.list > /dev/null
+    args:
+      creates: /etc/apt/sources.list.d/jenkins.list
+
+  - name: Update the server
+    apt:
+     update_cache: yes
+
+  - name: install java 21
+    apt:
+      name: openjdk-21-jdk
       state: present
-      key: https://pkg.jenkins.io/redhat-stable/jenkins.io.key
-  - name: Install java
-    yum:
-      name: java-11-openjdk-devel
+
+  - name: install java 11
+    apt:
+      name: openjdk-11-jre
       state: present
-  - name: Install Epel Relaase which has daemonize  dependency which is required for Jenkins.
-    yum:
-      name: https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm
-      state: present
-      disable_gpg_check: true
-  - name: Install jenkins
-    yum:
+
+  - name: install jenkins
+    apt:
       name: jenkins
-      state: latest
-      skip_broken: yes
-  - name: Start Jenkins
+      state: present
+
+  - name: enable jenkins
+    systemd:
+      name: jenkins
+      enabled: yes 
+
+  - name: Start jenkins
     service:
       name: jenkins
       state: started
-  - name: enable jenkins
-    systemd:
-     name: jenkins
-     enabled: true
-  - name: sleep for 30 seconds and continue with play
+
+  - name: sleep for 330 sec and continue playbook
     wait_for:
-     delay: 30
-     port: 8080
-  - name: init password jenkin
+      delay: 30
+
+  - name: Print Jenkins status
+    debug:
+      msg: "Jenkins service is running"
+
+  - name: init password for jenkins
     shell: cat /var/lib/jenkins/secrets/initialAdminPassword
-    changed_when: false
     register: result
+
   - name: print init password jenkins
     debug:
-     var: result.stdout
+      var: result.stdout

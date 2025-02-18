@@ -1,0 +1,55 @@
+- hosts: kubernetes
+  become: yes
+  tasks:
+
+  - name: update the package list
+    apt:
+      update_cache: yes
+
+  - name:  Install OpenJDK 17
+    apt:
+      name: openjdk-17-jdk
+      state: present
+
+  - name: Create a Tomcat User
+    user:
+      name: tomcat
+      home: /opt/tomcat
+      shell: /bin/false
+      create_home: yes
+      system: yes
+
+  - name: Install Tomcat
+    get_url:
+      url: "https://ftp.unicamp.br/pub/apache/tomcat/tomcat-10/v10.1.24/bin/apache-tomcat-10.1.24.tar.gz"
+      dest: "/tmp/apache-tomcat-10.1.24.tar.gz"
+
+  - name: extract tomcat tar file
+    unarchive:
+      src: "/tmp/apache-tomcat-10.1.24.tar.gz"
+      dest: "/opt/tomcat/"
+      remote_src: yes
+
+  - name: Change ownership of the Tomcat directory
+    file:
+      path: "/opt/tomcat"
+      owner: tomcat
+      group: tomcat
+      recurse: yes
+
+  - name: create service file
+    copy:
+      src: tomcat.service
+      dest: /etc/systemd/system/tomcat.service
+      mode: '0644'
+
+  - name: Reload systemd
+    service:
+      daemon-reload: yes
+      name: tomcat
+      enabled: yes
+
+  - name: start the service
+    service:
+      name: tomcat
+      state: started

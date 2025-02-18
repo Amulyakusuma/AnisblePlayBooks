@@ -1,0 +1,26 @@
+- hosts: docker
+  become: true
+  tasks:
+  - name: update
+    apt: update_cache=yes
+
+  - name: Install NGINX
+    apt:
+     name: nginx
+     state: present
+  - name: Enable default Nginx website
+    file:
+      src: /etc/nginx/sites-available/default
+      path: /etc/nginx/sites-enabled/default
+      state: link
+
+  - name: copy the index.html file
+    copy:
+      src: index.html
+      dest: /var/www/html/
+
+  - name: Start and Enable NGINX Service
+    service:
+      name: nginx
+      state: started
+      enabled: yes
