@@ -1,0 +1,26 @@
+server {
+    listen 82;
+    listen [::]:82;
+
+    server_name 3.110.191.74;
+
+    root /var/www/html;  # Change this to your application path
+    index index.html index.htm;
+
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
